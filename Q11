@@ -1,0 +1,22 @@
+#include <stdio.h>
+#include <math.h>
+
+unsigned long long factorial(int n) {
+    unsigned long long fact = 1;
+    int i;
+    for (i = 1; i <= n; i++) {
+        fact *= i;
+    }
+    return fact;
+}
+
+int main() {
+
+    unsigned long long possibleKeys = factorial(25);
+    double log2Keys = log2(possibleKeys);
+    double uniqueKeysLog2 = log2Keys - 20;
+    printf("Possible keys (ignoring identical results): 2^%.2f\n", log2Keys);
+    printf("Effectively unique keys (considering identical results): 2^%.2f\n", uniqueKeysLog2);
+
+    return 0;
+}
