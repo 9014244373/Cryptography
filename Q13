@@ -1,0 +1,119 @@
+def mod_inverse(a, m):
+    a = a % m
+    for x in range(1, m):
+        if (a * x) % m == 1:
+            return x
+    raise ValueError("Modular inverse does not exist")
+
+def inverse_key_matrix(key_matrix):
+    det = (key_matrix[0][0] * key_matrix[1][1] - key_matrix[0][1] * key_matrix[1][0]) % 26
+    if det < 0:
+        det += 26
+    print(f"Determinant: {det}")
+    try:
+        inv_det = mod_inverse(det, 26)
+    except ValueError as e:
+        print(e)
+        raise
+
+    inverse_matrix = [[0, 0], [0, 0]]
+    inverse_matrix[0][0] = (key_matrix[1][1] * inv_det) % 26
+    inverse_matrix[0][1] = (-key_matrix[0][1] * inv_det) % 26
+    inverse_matrix[1][0] = (-key_matrix[1][0] * inv_det) % 26
+    inverse_matrix[1][1] = (key_matrix[0][0] * inv_det) % 26
+    
+    # Ensure positive values
+    inverse_matrix = [[(val + 26) % 26 for val in row] for row in inverse_matrix]
+    
+    return inverse_matrix
+
+def find_key_matrix(plaintext_matrix, ciphertext_matrix):
+    det = (plaintext_matrix[0][0] * plaintext_matrix[1][1] - plaintext_matrix[0][1] * plaintext_matrix[1][0]) % 26
+    if det < 0:
+        det += 26
+    print(f"Determinant: {det}")
+    try:
+        inv_det = mod_inverse(det, 26)
+    except ValueError as e:
+        print(e)
+        raise
+
+    adjugate = [
+        [plaintext_matrix[1][1], -plaintext_matrix[0][1]],
+        [-plaintext_matrix[1][0], plaintext_matrix[0][0]]
+    ]
+    
+    adjugate = [[(val + 26) % 26 for val in row] for row in adjugate]
+    
+    key_matrix = [[(inv_det * adjugate[i][j]) % 26 for j in range(2)] for i in range(2)]
+    
+    key_matrix = [[int(round(val)) % 26 for val in row] for row in key_matrix]
+    
+    return key_matrix
+
+def hill_cipher_encrypt(message, key_matrix):
+    message = message.replace(" ", "").lower()
+    if len(message) % 2 != 0:
+        message += 'x'
+    
+    encrypted_message = ''
+    for i in range(0, len(message), 2):
+        pair = [ord(message[i]) - ord('a'), ord(message[i + 1]) - ord('a')]
+        encrypted_pair = [
+            (key_matrix[0][0] * pair[0] + key_matrix[0][1] * pair[1]) % 26,
+            (key_matrix[1][0] * pair[0] + key_matrix[1][1] * pair[1]) % 26
+        ]
+        encrypted_message += chr(encrypted_pair[0] + ord('a')) + chr(encrypted_pair[1] + ord('a'))
+    
+    return encrypted_message
+
+def hill_cipher_decrypt(ciphertext, key_matrix):
+    inverse_matrix = inverse_key_matrix(key_matrix)
+    
+    decrypted_message = ''
+    for i in range(0, len(ciphertext), 2):
+        pair = [ord(ciphertext[i]) - ord('a'), ord(ciphertext[i + 1]) - ord('a')]
+        decrypted_pair = [
+            (inverse_matrix[0][0] * pair[0] + inverse_matrix[0][1] * pair[1]) % 26,
+            (inverse_matrix[1][0] * pair[0] + inverse_matrix[1][1] * pair[1]) % 26
+        ]
+        decrypted_message += chr(decrypted_pair[0] + ord('a')) + chr(decrypted_pair[1] + ord('a'))
+    
+    return decrypted_message
+
+def main():
+    # Known plaintext and corresponding ciphertext
+    plaintext_pairs = [
+        "meetme",  # Plaintext
+        "wqklwq"   # Ciphertext (encrypted)
+    ]
+
+    plaintext = [
+        [ord(plaintext_pairs[0][0]) - ord('a'), ord(plaintext_pairs[0][1]) - ord('a')],
+        [ord(plaintext_pairs[0][2]) - ord('a'), ord(plaintext_pairs[0][3]) - ord('a')]
+    ]
+
+    ciphertext = [
+        [ord(plaintext_pairs[1][0]) - ord('a'), ord(plaintext_pairs[1][1]) - ord('a')],
+        [ord(plaintext_pairs[1][2]) - ord('a'), ord(plaintext_pairs[1][3]) - ord('a')]
+    ]
+
+    try:
+        key_matrix = find_key_matrix(plaintext, ciphertext)
+    except ValueError as e:
+        print("Error:", e)
+        return
+    
+    print("Recovered Key Matrix:")
+    for row in key_matrix:
+        print(row)
+
+    test_plaintext = "meet me at the usual place at ten rather than eight oclock"
+    encrypted_message = hill_cipher_encrypt(test_plaintext, key_matrix)
+    print("Encrypted Message:", encrypted_message)
+    
+    decrypted_message = hill_cipher_decrypt(encrypted_message, key_matrix)
+    print("Decrypted Message:", decrypted_message)
+
+if __name__ == "__main__":
+    main()
