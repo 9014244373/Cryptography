@@ -1,0 +1,50 @@
+import string
+from collections import Counter
+
+def count_frequencies(text):
+    """Count the frequency of each letter in the text."""
+    text = text.lower()
+    freq = Counter(ch for ch in text if ch in string.ascii_lowercase)
+    return freq
+
+def decrypt_with_shift(ciphertext, shift):
+    """Decrypt the ciphertext using a given shift value."""
+    decrypted_text = []
+    for char in ciphertext:
+        if char in string.ascii_lowercase:
+            base = ord('a')
+            decrypted_char = chr((ord(char) - base - shift) % 26 + base)
+            decrypted_text.append(decrypted_char)
+        elif char in string.ascii_uppercase:
+            base = ord('A')
+            decrypted_char = chr((ord(char) - base - shift) % 26 + base)
+            decrypted_text.append(decrypted_char)
+        else:
+            decrypted_text.append(char)
+    return ''.join(decrypted_text)
+
+def rank_plaintexts(ciphertext, top_n):
+    """Rank possible plaintexts based on frequency analysis and return the top N."""
+    scores = []
+    for shift in range(26):
+        plaintext = decrypt_with_shift(ciphertext, shift)
+        freq = count_frequencies(plaintext)
+        # Simple score: sum of frequencies of common letters (e.g., 'e', 't', 'a', 'o')
+        score = sum(freq.get(ch, 0) for ch in 'etaoinshrdlcumwfgypbkvjzxq')
+        scores.append((score, plaintext))
+    
+    # Sort based on scores and select top N
+    scores.sort(reverse=True, key=lambda x: x[0])
+    return [plaintext for _, plaintext in scores[:top_n]]
+
+def main():
+    ciphertext = "Uifsf jt b ugbet!";  # Example ciphertext
+    top_n = int(input("Enter the number of top possible plaintexts to display: "))
+    top_plaintexts = rank_plaintexts(ciphertext, top_n)
+    
+    print(f"Top {top_n} possible plaintexts:")
+    for idx, plaintext in enumerate(top_plaintexts, start=1):
+        print(f"{idx}: {plaintext}")
+
+if __name__ == "__main__":
+    main()
