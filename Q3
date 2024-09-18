@@ -1,0 +1,63 @@
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+void generateKeyMatrix(char key[], char keyMatrix[5][5]);
+void prepareText(char text[]);
+void encrypt(char text[], char keyMatrix[5][5]);
+void findPosition(char ch, char keyMatrix[5][5], int *row, int *col);
+
+int main() {
+    char text[100], key[100], keyMatrix[5][5];
+    
+    printf("Enter the keyword: ");
+    fgets(key, sizeof(key), stdin);
+    key[strcspn(key, "\n")] = '\0';
+    
+    printf("Enter the plaintext: ");
+    fgets(text, sizeof(text), stdin);
+    text[strcspn(text, "\n")] = '\0';
+    
+    generateKeyMatrix(key, keyMatrix); 
+    prepareText(text);
+    encrypt(text, keyMatrix);
+    
+    printf("Encrypted text is: %s\n", text);
+    return 0;
+}
+void generateKeyMatrix(char key[], char keyMatrix[5][5]) {
+    int i, j, k = 0, used[26] = {0}; char ch;
+    for (i = 0; key[i] != '\0'; i++) { 
+        ch = toupper(key[i]);
+        if (ch == 'J') ch = 'I';
+        if (isalpha(ch) && !used[ch - 'A']) keyMatrix[k / 5][k++ % 5] = ch, used[ch - 'A'] = 1;
+    }
+    for (i = 0; i < 26; i++) if (!used[i] && (ch = 'A' + i) != 'J') keyMatrix[k / 5][k++ % 5] = ch;
+}
+void prepareText(char text[]) {
+    int i, j = 0; char prepared[100] = {0};
+    for (i = 0; text[i] != '\0'; i++) {
+        if (isalpha(text[i])) {
+            text[i] = toupper(text[i]);
+            if (text[i] == 'J') text[i] = 'I';
+            prepared[j++] = text[i];
+            if (j > 1 && prepared[j - 1] == prepared[j - 2]) prepared[j - 1] = 'X', prepared[j++] = text[i];
+        }
+    }
+    if (j % 2 != 0) prepared[j++] = 'X';
+    strcpy(text, prepared);
+}
+void encrypt(char text[], char keyMatrix[5][5]) {
+    int i, row1, col1, row2, col2;
+    for (i = 0; text[i] != '\0'; i += 2) {
+        findPosition(text[i], keyMatrix, &row1, &col1);
+        findPosition(text[i + 1], keyMatrix, &row2, &col2);
+        if (row1 == row2) text[i] = keyMatrix[row1][(col1 + 1) % 5], text[i + 1] = keyMatrix[row2][(col2 + 1) % 5];
+        else if (col1 == col2) text[i] = keyMatrix[(row1 + 1) % 5][col1], text[i + 1] = keyMatrix[(row2 + 1) % 5][col2];
+        else text[i] = keyMatrix[row1][col2], text[i + 1] = keyMatrix[row2][col1];
+    }
+}
+void findPosition(char ch, char keyMatrix[5][5], int *row, int *col) {
+    int i, j;
+    for (i = 0; i < 5; i++) for (j = 0; j < 5; j++) if (keyMatrix[i][j] == ch) *row = i, *col = j;
+}
