@@ -1,0 +1,46 @@
+#include <stdio.h>
+int mod_inverse(int a, int mod) {
+    int i;
+    for (i = 1; i < mod; i++) {
+        if ((a * i) % mod == 1) {
+            return i;
+        }
+    }
+    return -1; 
+}
+char affine_decrypt(char c, int a_inv, int b) {
+    if (c >= 'a' && c <= 'z') {
+        return (char)((a_inv * ((c - 'a' - b + 26)) % 26) + 'a');
+    } else if (c >= 'A' && c <= 'Z') {
+        return (char)((a_inv * ((c - 'A' - b + 26)) % 26) + 'A');
+    } else {
+        return c;
+    }
+}
+int main() {
+    int a, b, i, a_inv;
+    char ciphertext[100];
+    int mod = 26;
+    int rhs = (20 - 1 + mod) % mod;
+    int lhs = 19 - 4;
+    int mod_inv_15 = mod_inverse(15, 26);
+    a = (mod_inv_15 * rhs) % mod;
+    if (a < 0) a += mod;
+    b = (1 - 4 * a + mod) % mod;
+    if (b < 0) b += mod;
+    printf("a = %d, b = %d\n", a, b);
+    a_inv = mod_inverse(a, 26);
+    if (a_inv == -1) {
+        printf("Error: no modular inverse for a.\n");
+        return 1;
+    }
+    printf("Enter ciphertext: ");
+    scanf(" %[^\n]%*c", ciphertext);
+    printf("Decrypted text: ");
+    for (i = 0; ciphertext[i] != '\0'; i++) {
+        printf("%c", affine_decrypt(ciphertext[i], a_inv, b));
+    }
+    printf("\n");
+
+    return 0;
+}
