@@ -1,0 +1,48 @@
+#include <stdio.h>
+#include <string.h>
+void count_frequency(const char *text, int freq[]) {
+    int i;
+    for (i = 0; text[i] != '\0'; i++) {
+        if (text[i] >= ' ' && text[i] <= '~') { 
+            freq[(unsigned char)text[i]]++;
+        }
+    }
+}
+void print_frequency(int freq[]) {
+    int i;
+    for (i = 32; i <= 126; i++) {
+        if (freq[i] > 0) {
+            printf("%c: %d\n", i, freq[i]);
+        }
+    }
+}
+void decrypt(const char *ciphertext, char *decryption_map) {
+    int i;
+    for (i = 0; ciphertext[i] != '\0'; i++) {
+        if (ciphertext[i] >= ' ' && ciphertext[i] <= '~') {
+            printf("%c", decryption_map[(unsigned char)ciphertext[i]]);
+        } else {
+            printf("%c", ciphertext[i]); 
+        }
+    }
+    printf("\n");
+}
+int main() {
+    char ciphertext[] = "53‡‡†305))6*;4826)4‡.)4‡);806*;48†8¶60))85;;]8*;:‡*8†83 (88)5*†;46(;88*96*?;8)*‡(;485);5*†2:*‡(;4956*2(5*—4)8¶8* ;4069285);)6†8)4‡‡;1(‡9;48081;8:8‡1;48†85;4)485†528806*81 (‡9;48;(88;4(‡?34;48)4‡;161;:188;‡?;";
+    int freq[128] = {0}; 
+    count_frequency(ciphertext, freq);
+    printf("Character frequencies:\n");
+    print_frequency(freq);
+    char decryption_map[128];
+    int i;
+    for (i = 0; i < 128; i++) {
+        decryption_map[i] = (char)i;
+    }
+    decryption_map['‡'] = 'e';
+    decryption_map['†'] = 't';
+    decryption_map['¶'] = 'h';
+    printf("\nDecrypted message:\n");
+    decrypt(ciphertext, decryption_map);
+
+    return 0;
+}
