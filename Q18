@@ -1,0 +1,78 @@
+# Initial Permutation for the key
+PC1 = [
+    57, 49, 41, 33, 25, 17, 9,
+    1, 58, 50, 42, 34, 26, 18,
+    10, 2, 59, 51, 43, 35, 27,
+    19, 11, 3, 60, 52, 44, 36,
+    63, 55, 47, 39, 31, 23, 15,
+    7, 62, 54, 46, 38, 30, 22,
+    14, 6, 61, 53, 45, 37, 29,
+    21, 13, 5, 28, 20, 12, 4
+]
+
+# PC-2 used to select 48 bits from the shifted key (24 bits from each subset)
+PC2 = [
+    14, 17, 11, 24, 1, 5,
+    3, 28, 15, 6, 21, 10,
+    23, 19, 12, 4, 26, 8,
+    16, 7, 27, 20, 13, 2,
+    41, 52, 31, 37, 47, 55,
+    30, 40, 51, 45, 33, 48,
+    44, 49, 39, 56, 34, 53,
+    46, 42, 50, 36, 29, 32
+]
+
+# Number of shifts for each round
+SHIFT_SCHEDULE = [1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1]
+
+# Initial 64-bit key is reduced to 56 bits using PC1
+def permute(key, perm_table):
+    return [key[i - 1] for i in perm_table]
+
+# Left circular shift for key scheduling
+def left_shift(bits, num_shifts):
+    return bits[num_shifts:] + bits[:num_shifts]
+
+# Key schedule generation
+def generate_subkeys(initial_key):
+    # Step 1: Apply PC1 to get the 56-bit key
+    key_56 = permute(initial_key, PC1)
+    
+    # Step 2: Split into two 28-bit halves
+    C = key_56[:28]  # First 28 bits
+    D = key_56[28:]  # Second 28 bits
+    
+    subkeys = []
+    
+    # Step 3: Perform 16 rounds of key shifting and PC2
+    for i in range(16):
+        # Left shift both halves according to the shift schedule
+        C = left_shift(C, SHIFT_SCHEDULE[i])
+        D = left_shift(D, SHIFT_SCHEDULE[i])
+        
+        # Combine the two halves and apply PC2 to get the 48-bit subkey
+        combined_key = C + D
+        subkey = permute(combined_key, PC2)
+        
+        subkeys.append(subkey)
+    
+    return subkeys
+
+# Example 64-bit key (in binary format)
+initial_key = [
+    0, 1, 1, 0, 0, 1, 0, 1, 
+    1, 1, 0, 1, 0, 1, 1, 1, 
+    0, 1, 1, 1, 1, 0, 0, 1, 
+    1, 0, 1, 0, 1, 1, 0, 1, 
+    1, 0, 1, 1, 0, 1, 1, 1, 
+    1, 0, 1, 1, 0, 1, 0, 1, 
+    1, 0, 1, 0, 1, 0, 1, 0, 
+    1, 0, 1, 0, 1, 0, 1, 1
+]
+
+# Generate the subkeys
+subkeys = generate_subkeys(initial_key)
+
+# Print the generated subkeys
+for i, subkey in enumerate(subkeys):
+    print(f"Subkey {i + 1}: {''.join(map(str, subkey))}")
