@@ -1,0 +1,35 @@
+from Crypto.Cipher import DES3
+from Crypto.Util.Padding import pad
+from Crypto.Random import get_random_bytes
+
+def print_hex(data):
+    print(data.hex().upper())
+
+def main():
+    # 3DES key (192-bit or 24 bytes)
+    key = b'\x12\x34\x56\x78\x90\xAB\xCD\xEF\x23\x45\x67\x89\xAB\xCD\xEF\x01\x34\x56\x78\x90\xAB\xCD\xEF\x12'
+    
+    # Initialization vector (IV) for CBC mode
+    iv = get_random_bytes(8)  # Random 8-byte IV
+
+    # Plaintext to be encrypted (must be padded to a multiple of 8 bytes for DES)
+    plaintext = b"This is a test message for 3DES encryption in CBC mode!"
+    
+    # Pad plaintext to be a multiple of 8 bytes
+    padded_plaintext = pad(plaintext, DES3.block_size)
+
+    # Create 3DES cipher object
+    cipher = DES3.new(key, DES3.MODE_CBC, iv)
+
+    # Encrypt the padded plaintext
+    ciphertext = cipher.encrypt(padded_plaintext)
+
+    # Output the IV and ciphertext
+    print("Initialization Vector (hex): ", end='')
+    print_hex(iv)
+    
+    print("Ciphertext (hex): ", end='')
+    print_hex(ciphertext)
+
+if __name__ == "__main__":
+    main()
