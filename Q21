@@ -1,0 +1,78 @@
+from Crypto.Cipher import AES
+from Crypto.Random import get_random_bytes
+
+# Padding method: add a '1' bit followed by '0' bits
+def pad(plaintext):
+    padding_len = AES.block_size - (len(plaintext) % AES.block_size)
+    padding = b'\x80' + b'\x00' * (padding_len - 1)
+    return plaintext + padding
+
+# Unpadding method: remove the padding
+def unpad(plaintext):
+    return plaintext.rstrip(b'\x00').rstrip(b'\x80')
+
+# Encrypt using ECB mode
+def ecb_encrypt(key, plaintext):
+    cipher = AES.new(key, AES.MODE_ECB)
+    padded_plaintext = pad(plaintext)
+    return cipher.encrypt(padded_plaintext)
+
+# Decrypt using ECB mode
+def ecb_decrypt(key, ciphertext):
+    cipher = AES.new(key, AES.MODE_ECB)
+    decrypted_plaintext = cipher.decrypt(ciphertext)
+    return unpad(decrypted_plaintext)
+
+# Encrypt using CBC mode
+def cbc_encrypt(key, plaintext):
+    iv = get_random_bytes(AES.block_size)
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+    padded_plaintext = pad(plaintext)
+    return iv + cipher.encrypt(padded_plaintext)
+
+# Decrypt using CBC mode
+def cbc_decrypt(key, ciphertext):
+    iv = ciphertext[:AES.block_size]
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+    decrypted_plaintext = cipher.decrypt(ciphertext[AES.block_size:])
+    return unpad(decrypted_plaintext)
+
+# Encrypt using CFB mode (no need for padding in CFB)
+def cfb_encrypt(key, plaintext):
+    iv = get_random_bytes(AES.block_size)
+    cipher = AES.new(key, AES.MODE_CFB, iv)
+    return iv + cipher.encrypt(plaintext)
+
+# Decrypt using CFB mode
+def cfb_decrypt(key, ciphertext):
+    iv = ciphertext[:AES.block_size]
+    cipher = AES.new(key, AES.MODE_CFB, iv)
+    return cipher.decrypt(ciphertext[AES.block_size:])
+
+# Main function to demonstrate the modes
+def main():
+    key = get_random_bytes(16)  # AES key
+    plaintext = b"Example plaintext for AES encryption modes."
+
+    print("Original plaintext:", plaintext)
+
+    # ECB Mode
+    print("\nECB Mode:")
+    ecb_ciphertext = ecb_encrypt(key, plaintext)
+    ecb_decrypted = ecb_decrypt(key, ecb_ciphertext)
+    print("Decrypted ECB:", ecb_decrypted)
+
+    # CBC Mode
+    print("\nCBC Mode:")
+    cbc_ciphertext = cbc_encrypt(key, plaintext)
+    cbc_decrypted = cbc_decrypt(key, cbc_ciphertext)
+    print("Decrypted CBC:", cbc_decrypted)
+
+    # CFB Mode
+    print("\nCFB Mode:")
+    cfb_ciphertext = cfb_encrypt(key, plaintext)
+    cfb_decrypted = cfb_decrypt(key, cfb_ciphertext)
+    print("Decrypted CFB:", cfb_decrypted)
+
+if __name__ == "__main__":
+    main()
