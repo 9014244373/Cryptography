@@ -1,0 +1,90 @@
+#include <stdio.h>
+
+void generateKeys(int key, int *k1, int *k2);
+int sdesEncrypt(int plaintext, int k1, int k2);
+int applyInitialPermutation(int data);
+int applyInverseInitialPermutation(int data);
+int feistel(int right, int subkey);
+int fFunction(int right, int subkey);
+int xor(int a, int b);
+
+int initialPermutation[8] = {1, 5, 2, 0, 3, 7, 4, 6};
+int inverseInitialPermutation[8] = {3, 0, 2, 4, 6, 1, 7, 5}; 
+
+int main() {
+    
+    int key = 0b0111111101;
+    int counter = 0b00000000; 
+    int plaintext[] = {0b00000001, 0b00000010, 0b00000100};
+    int ciphertext[3];  
+    int decrypted[3]; 
+    int k1, k2;         
+    int i;              
+    generateKeys(key, &k1, &k2);
+
+    printf("Encrypting using Counter Mode...\n");
+    for (i = 0; i < 3; i++) {
+        int keystream = sdesEncrypt(counter, k1, k2); 
+        ciphertext[i] = plaintext[i] ^ keystream;    
+        counter++;                                    
+    }
+    printf("Ciphertext: ");
+    for (i = 0; i < 3; i++) {
+        printf("%08b ", ciphertext[i]);
+    }
+    printf("\n");
+
+    printf("\nDecrypting using Counter Mode...\n");
+    counter = 0b00000000;
+    for (i = 0; i < 3; i++) {
+        int keystream = sdesEncrypt(counter, k1, k2); 
+        decrypted[i] = ciphertext[i] ^ keystream;     
+        counter++;                                    
+    }
+    printf("Decrypted plaintext: ");
+    for (i = 0; i < 3; i++) {
+        printf("%08b ", decrypted[i]);
+    }
+    printf("\n");
+
+    return 0;
+}
+void generateKeys(int key, int *k1, int *k2) {
+    *k1 = (key >> 2) & 0xFF; 
+    *k2 = (key >> 4) & 0xFF; 
+}
+int sdesEncrypt(int plaintext, int k1, int k2) {
+    int data = applyInitialPermutation(plaintext);
+    int left = (data >> 4) & 0xF;
+    int right = data & 0xF;
+
+    left = left ^ fFunction(right, k1);
+    int tmp = left;
+    left = right;
+    right = tmp ^ fFunction(left, k2);
+
+    int encrypted = (left << 4) | right;
+    return applyInverseInitialPermutation(encrypted);
+}
+int applyInitialPermutation(int data) {
+    int permuted = 0;
+    int i;
+    for (i = 0; i < 8; i++) {
+        permuted |= ((data >> initialPermutation[i]) & 1) << i;
+    }
+    return permuted;
+}
+int applyInverseInitialPermutation(int data) {
+    int permuted = 0;
+    int i;
+    for (i = 0; i < 8; i++) {
+        permuted |= ((data >> inverseInitialPermutation[i]) & 1) << i;
+    }
+    return permuted;
+}
+int fFunction(int right, int subkey) {
+    return (right ^ subkey) & 0xF; 
+}
+int xor(int a, int b) {
+    return a ^ b;
+}
