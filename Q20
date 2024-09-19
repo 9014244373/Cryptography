@@ -1,0 +1,77 @@
+from Crypto.Cipher import AES
+from Crypto.Random import get_random_bytes
+
+# Function to pad plaintext to a multiple of AES block size (16 bytes)
+def pad(plaintext):
+    padding_len = 16 - len(plaintext) % 16
+    padding = chr(padding_len) * padding_len
+    return plaintext + padding.encode()
+
+# Function to unpad the plaintext
+def unpad(plaintext):
+    padding_len = plaintext[-1]
+    return plaintext[:-padding_len]
+
+# Function to introduce an error in a block
+def introduce_error(block, error_byte_pos=0):
+    byte_list = bytearray(block)
+    byte_list[error_byte_pos] ^= 1  # Flip one bit
+    return bytes(byte_list)
+
+# ECB mode encryption and decryption
+def ecb_encrypt_decrypt(key, plaintext):
+    cipher = AES.new(key, AES.MODE_ECB)
+    
+    # Pad the plaintext to be a multiple of block size
+    plaintext = pad(plaintext)
+    
+    # Encrypt
+    ciphertext = cipher.encrypt(plaintext)
+    
+    # Introduce an error in the first ciphertext block
+    ciphertext_with_error = introduce_error(ciphertext[:16]) + ciphertext[16:]
+    
+    # Decrypt
+    decrypted_with_error = cipher.decrypt(ciphertext_with_error)
+    
+    return unpad(decrypted_with_error)
+
+# CBC mode encryption and decryption
+def cbc_encrypt_decrypt(key, plaintext):
+    iv = get_random_bytes(16)
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+    
+    # Pad the plaintext to be a multiple of block size
+    plaintext = pad(plaintext)
+    
+    # Encrypt
+    ciphertext = cipher.encrypt(plaintext)
+    
+    # Introduce an error in the first ciphertext block
+    ciphertext_with_error = introduce_error(ciphertext[:16]) + ciphertext[16:]
+    
+    # Decrypt
+    cipher_dec = AES.new(key, AES.MODE_CBC, iv)
+    decrypted_with_error = cipher_dec.decrypt(ciphertext_with_error)
+    
+    return unpad(decrypted_with_error)
+
+# Main function to compare ECB and CBC error propagation
+def main():
+    key = get_random_bytes(16)  # AES key
+    plaintext = b"Example plaintext for testing error propagation."
+
+    print("Original plaintext:", plaintext)
+
+    # ECB Mode
+    print("\nECB Mode:")
+    decrypted_ecb = ecb_encrypt_decrypt(key, plaintext)
+    print("Decrypted with error in ECB:", decrypted_ecb)
+
+    # CBC Mode
+    print("\nCBC Mode:")
+    decrypted_cbc = cbc_encrypt_decrypt(key, plaintext)
+    print("Decrypted with error in CBC:", decrypted_cbc)
+
+if __name__ == "__main__":
+    main()
