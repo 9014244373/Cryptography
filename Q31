@@ -1,0 +1,50 @@
+#include <stdio.h>
+#include <stdint.h>
+#include <string.h>
+
+#define BLOCK_SIZE 16 
+void left_shift(uint8_t* input, uint8_t* output) {
+    int carry = 0;  
+    int i;
+    for (i = BLOCK_SIZE - 1; i >= 0; i--) {
+        int current = input[i] << 1;
+        output[i] = (current & 0xFF) | carry;  
+        carry = (input[i] & 0x80) ? 1 : 0;  
+    }
+}
+void generate_subkeys(uint8_t* K1, uint8_t* K2) {
+    uint8_t L[BLOCK_SIZE] = {0};  
+    uint8_t temp[BLOCK_SIZE] = {0};
+    memset(L, 0, BLOCK_SIZE);
+    left_shift(L, K1);
+    if (L[0] & 0x80) {
+        K1[BLOCK_SIZE - 1] ^= 0x87;  
+    }
+
+    left_shift(K1, K2);
+    if (K1[0] & 0x80) {
+        K2[BLOCK_SIZE - 1] ^= 0x87; 
+    }
+}
+
+void print_hex(const uint8_t* data, int length) {
+    int i;
+    for (i = 0; i < length; i++) {
+        printf("%02x", data[i]);
+    }
+    printf("\n");
+}
+
+int main() {
+    uint8_t K1[BLOCK_SIZE];
+    uint8_t K2[BLOCK_SIZE];
+
+    generate_subkeys(K1, K2);
+
+    printf("Subkey K1: ");
+    print_hex(K1, BLOCK_SIZE);
+    printf("Subkey K2: ");
+    print_hex(K2, BLOCK_SIZE);
+
+    return 0;
+}
