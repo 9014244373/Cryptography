@@ -1,0 +1,145 @@
+#include <stdio.h>
+#include <string.h>
+
+#define MATRIX_SIZE 3  
+#define MOD 26
+
+int mod_inverse(int a, int mod) {
+    int m0 = mod, t, q;
+    int x0 = 0, x1 = 1;
+
+    if (mod == 1) return 0;
+
+    while (a > 1) {
+        q = a / mod;
+        t = mod;
+
+        mod = a % mod, a = t;
+        t = x0;
+
+        x0 = x1 - q * x0;
+        x1 = t;
+    }
+
+    if (x1 < 0) x1 += m0;
+
+    return x1;
+}
+
+int determinant(int matrix[MATRIX_SIZE][MATRIX_SIZE]) {
+    return matrix[0][0] * (matrix[1][1] * matrix[2][2] - matrix[1][2] * matrix[2][1])
+         - matrix[0][1] * (matrix[1][0] * matrix[2][2] - matrix[1][2] * matrix[2][0])
+         + matrix[0][2] * (matrix[1][0] * matrix[2][1] - matrix[1][1] * matrix[2][0]);
+}
+
+void cofactor_matrix(int matrix[MATRIX_SIZE][MATRIX_SIZE], int cofactor[MATRIX_SIZE][MATRIX_SIZE]) {
+    cofactor[0][0] = (matrix[1][1] * matrix[2][2] - matrix[1][2] * matrix[2][1]);
+    cofactor[0][1] = -(matrix[1][0] * matrix[2][2] - matrix[1][2] * matrix[2][0]);
+    cofactor[0][2] = (matrix[1][0] * matrix[2][1] - matrix[1][1] * matrix[2][0]);
+
+    cofactor[1][0] = -(matrix[0][1] * matrix[2][2] - matrix[0][2] * matrix[2][1]);
+    cofactor[1][1] = (matrix[0][0] * matrix[2][2] - matrix[0][2] * matrix[2][0]);
+    cofactor[1][2] = -(matrix[0][0] * matrix[2][1] - matrix[0][1] * matrix[2][0]);
+
+    cofactor[2][0] = (matrix[0][1] * matrix[1][2] - matrix[0][2] * matrix[1][1]);
+    cofactor[2][1] = -(matrix[0][0] * matrix[1][2] - matrix[0][2] * matrix[1][0]);
+    cofactor[2][2] = (matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0]);
+}
+
+void transpose(int matrix[MATRIX_SIZE][MATRIX_SIZE]) {
+    int temp;
+    int i, j;
+    for (i = 0; i < MATRIX_SIZE; i++) {
+        for (j = i + 1; j < MATRIX_SIZE; j++) {
+            temp = matrix[i][j];
+            matrix[i][j] = matrix[j][i];
+            matrix[j][i] = temp;
+        }
+    }
+}
+
+void inverse_matrix(int matrix[MATRIX_SIZE][MATRIX_SIZE], int inverse[MATRIX_SIZE][MATRIX_SIZE], int mod) {
+    int det = determinant(matrix) % mod;
+    if (det < 0) det += mod;
+
+    int det_inv = mod_inverse(det, mod);
+
+    int cofactor[MATRIX_SIZE][MATRIX_SIZE];
+    cofactor_matrix(matrix, cofactor);
+
+    transpose(cofactor);
+
+    int i, j;
+    for (i = 0; i < MATRIX_SIZE; i++) {
+        for (j = 0; j < MATRIX_SIZE; j++) {
+            inverse[i][j] = (cofactor[i][j] * det_inv) % mod;
+            if (inverse[i][j] < 0) inverse[i][j] += mod;
+        }
+    }
+}
+
+void multiply_matrices(int matrix1[MATRIX_SIZE][MATRIX_SIZE], int matrix2[MATRIX_SIZE], int result[MATRIX_SIZE], int mod) {
+    int i, j;
+    for (i = 0; i < MATRIX_SIZE; i++) {
+        result[i] = 0;
+        for (j = 0; j < MATRIX_SIZE; j++) {
+            result[i] += matrix1[i][j] * matrix2[j];
+        }
+        result[i] %= mod;
+    }
+}
+
+void hill_encrypt(int key[MATRIX_SIZE][MATRIX_SIZE], char plaintext_block[MATRIX_SIZE], char ciphertext_block[MATRIX_SIZE]) {
+    int plaintext_vector[MATRIX_SIZE], ciphertext_vector[MATRIX_SIZE];
+    int i;
+
+    for (i = 0; i < MATRIX_SIZE; i++) {
+        plaintext_vector[i] = plaintext_block[i] - 'A';
+    }
+
+    multiply_matrices(key, plaintext_vector, ciphertext_vector, MOD);
+
+    for (i = 0; i < MATRIX_SIZE; i++) {
+        ciphertext_block[i] = ciphertext_vector[i] + 'A';
+    }
+}
+
+void hill_decrypt(int key[MATRIX_SIZE][MATRIX_SIZE], char ciphertext_block[MATRIX_SIZE], char plaintext_block[MATRIX_SIZE]) {
+    int inverse_key[MATRIX_SIZE][MATRIX_SIZE];
+    int ciphertext_vector[MATRIX_SIZE], plaintext_vector[MATRIX_SIZE];
+    int i;
+
+    inverse_matrix(key, inverse_key, MOD);
+
+    for (i = 0; i < MATRIX_SIZE; i++) {
+        ciphertext_vector[i] = ciphertext_block[i] - 'A';
+    }
+
+    multiply_matrices(inverse_key, ciphertext_vector, plaintext_vector, MOD);
+
+    for (i = 0; i < MATRIX_SIZE; i++) {
+        plaintext_block[i] = plaintext_vector[i] + 'A';
+    }
+}
+
+int main() {
+   
+    int key[MATRIX_SIZE][MATRIX_SIZE] = {
+        { 6, 24, 1 },
+        { 13, 16, 10 },
+        { 20, 17, 15 }
+    };
+
+    char plaintext[MATRIX_SIZE], ciphertext[MATRIX_SIZE], decrypted[MATRIX_SIZE];
+
+    printf("Enter a 3-letter plaintext (uppercase letters only): ");
+    scanf("%s", plaintext);
+
+    hill_encrypt(key, plaintext, ciphertext);
+    printf("Encrypted Text: %s\n", ciphertext);
+
+    hill_decrypt(key, ciphertext, decrypted);
+    printf("Decrypted Text: %s\n", decrypted);
+
+    return 0;
+}
