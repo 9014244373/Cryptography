@@ -1,0 +1,110 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+#define ALPHABET_SIZE 26
+
+int english_letter_freq[ALPHABET_SIZE] = {
+    1270,  
+    905,   
+    817,   
+    749,   
+    706,   
+    674,   
+    632,   
+    609,   
+    598,   
+    493,   
+    421,   
+    398,   
+    278,   
+    276,   
+    241,   
+    236,   
+    223,   
+    201,   
+    197,   
+    149,   
+    133,   
+    101,   
+    67,    
+    19,    
+    15,    
+    7      
+};
+
+typedef struct {
+    char letter;
+    int frequency;
+} Frequency;
+
+void calculate_frequency(char *ciphertext, Frequency *cipher_freq) {
+    int len = strlen(ciphertext);
+    int i;
+
+    for (i = 0; i < ALPHABET_SIZE; i++) {
+        cipher_freq[i].letter = 'A' + i;
+        cipher_freq[i].frequency = 0;
+    }
+
+    for (i = 0; i < len; i++) {
+        if (ciphertext[i] >= 'A' && ciphertext[i] <= 'Z') {
+            cipher_freq[ciphertext[i] - 'A'].frequency++;
+        }
+    }
+}
+
+int compare_frequency(const void *a, const void *b) {
+    return ((Frequency *)b)->frequency - ((Frequency *)a)->frequency;
+}
+
+void generate_plaintext(char *ciphertext, Frequency *cipher_freq, char *plaintext, int shift_map[]) {
+    int i, len = strlen(ciphertext);
+
+    for (i = 0; i < len; i++) {
+        if (ciphertext[i] >= 'A' && ciphertext[i] <= 'Z') {
+            plaintext[i] = shift_map[ciphertext[i] - 'A'] + 'A';
+        } else {
+            plaintext[i] = ciphertext[i];  
+        }
+    }
+    plaintext[len] = '\0';  
+}
+
+void print_top_n_plaintexts(char *ciphertext, Frequency *cipher_freq, int n) {
+    int i, j;
+    char plaintext[256];
+    int shift_map[ALPHABET_SIZE];
+
+    qsort(cipher_freq, ALPHABET_SIZE, sizeof(Frequency), compare_frequency);
+
+    for (i = 0; i < n; i++) {
+        
+        for (j = 0; j < ALPHABET_SIZE; j++) {
+            shift_map[cipher_freq[j].letter - 'A'] = english_letter_freq[(i + j) % ALPHABET_SIZE];
+        }
+
+        generate_plaintext(ciphertext, cipher_freq, plaintext, shift_map);
+
+        printf("Plaintext Guess %d: %s\n", i + 1, plaintext);
+    }
+}
+
+int main() {
+    char ciphertext[256];
+    Frequency cipher_freq[ALPHABET_SIZE];
+    int n;
+
+    printf("Enter the ciphertext: ");
+    fgets(ciphertext, sizeof(ciphertext), stdin);
+    ciphertext[strcspn(ciphertext, "\n")] = '\0'; 
+
+    printf("Enter the number of top plaintexts to print: ");
+    scanf("%d", &n);
+
+    calculate_frequency(ciphertext, cipher_freq);
+
+    print_top_n_plaintexts(ciphertext, cipher_freq, n);
+
+    return 0;
+}
