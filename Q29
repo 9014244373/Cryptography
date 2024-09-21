@@ -1,0 +1,52 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
+#define TOTAL_LANES 25           
+#define LANE_SIZE 64             
+#define BLOCK_SIZE 1024          
+#define CAPACITY_LANES 8        
+
+void set_random_bits(unsigned long long message_block[], int block_size) {
+    int i;
+    for (i = 0; i < block_size / LANE_SIZE; i++) {
+        message_block[i] = rand() % (1ULL << LANE_SIZE); 
+    }
+}
+int check_all_capacity_nonzero(unsigned long long state[], int capacity_lanes) {
+    int i;
+    for (i = TOTAL_LANES - capacity_lanes; i < TOTAL_LANES; i++) {
+        if (state[i] == 0) {
+            return 0;  
+        }
+    }
+    return 1;
+}
+
+int main() {
+    
+    srand(time(NULL));
+    unsigned long long state[TOTAL_LANES] = {0};
+    printf("Initial state of capacity lanes:\n");
+    int i;
+    for (i = TOTAL_LANES - CAPACITY_LANES; i < TOTAL_LANES; i++) {
+        printf("Lane %d: %llu\n", i, state[i]);
+    }
+
+    int rounds = 0;
+    while (!check_all_capacity_nonzero(state, CAPACITY_LANES)) {
+        unsigned long long message_block[BLOCK_SIZE / LANE_SIZE];  
+        set_random_bits(message_block, BLOCK_SIZE);
+        for (i = 0; i < BLOCK_SIZE / LANE_SIZE; i++) {
+            state[i] ^= message_block[i];
+        }
+        rounds++;
+        printf("\nState after round %d:\n", rounds);
+        for (i = TOTAL_LANES - CAPACITY_LANES; i < TOTAL_LANES; i++) {
+            printf("Lane %d: %llu\n", i, state[i]);
+        }
+    }
+    printf("\nAll capacity lanes have nonzero bits after %d rounds.\n", rounds);
+
+    return 0;
+}
