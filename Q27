@@ -1,0 +1,64 @@
+#include <stdio.h>
+#include <stdlib.h>
+unsigned long long mod_exp(unsigned long long a, unsigned long long b, unsigned long long m) {
+    unsigned long long result = 1;
+    a = a % m;
+    while (b > 0) {
+        if (b % 2 == 1)  
+            result = (result * a) % m;
+        b = b >> 1;       
+        a = (a * a) % m; 
+    }
+    return result;
+}
+
+unsigned long long rsa_encrypt(unsigned long long m, unsigned long long e, unsigned long long n) {
+    return mod_exp(m, e, n);
+}
+
+unsigned long long rsa_decrypt(unsigned long long c, unsigned long long d, unsigned long long n) {
+    return mod_exp(c, d, n);
+}
+
+int main() {
+
+    unsigned long long p = 61;  
+    unsigned long long q = 53;  
+    unsigned long long n = p * q;  
+    unsigned long long phi = (p - 1) * (q - 1);  
+    unsigned long long e = 17; 
+    unsigned long long d = 2753;  
+
+    char message[] = "HELLO";
+    int message_length = 5;
+    int plaintext[5] = {7, 4, 11, 11, 14};
+
+    printf("Original message: %s\n", message);
+    printf("Plaintext (as numbers): ");
+    int i;
+    for (i = 0; i < message_length; i++) {
+        printf("%d ", plaintext[i]);
+    }
+    printf("\n");
+    unsigned long long ciphertext[5];
+    printf("Encrypted message (as numbers): ");
+    for (i = 0; i < message_length; i++) {
+        ciphertext[i] = rsa_encrypt(plaintext[i], e, n);
+        printf("%llu ", ciphertext[i]);
+    }
+    printf("\n");
+    int decrypted[5];
+    printf("Decrypted message (as numbers): ");
+    for (i = 0; i < message_length; i++) {
+        decrypted[i] = rsa_decrypt(ciphertext[i], d, n);
+        printf("%d ", decrypted[i]);
+    }
+    printf("\n");
+    printf("Decrypted message (as text): ");
+    for (i = 0; i < message_length; i++) {
+        printf("%c", decrypted[i] + 'A'); 
+    }
+    printf("\n");
+
+    return 0;
+}
