@@ -1,0 +1,78 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <string.h>
+
+#define ALPHABET_SIZE 26
+
+void generate_key(int *key, int length) {
+    int i;
+    for (i = 0; i < length; i++)
+        key[i] = rand() % ALPHABET_SIZE; 
+}
+
+void vigenere_encrypt(char *plaintext, int *key, char *ciphertext) {
+    int i;
+    int len = strlen(plaintext);
+    
+    for (i = 0; i < len; i++) {
+        
+        if (plaintext[i] >= 'A' && plaintext[i] <= 'Z') {
+            ciphertext[i] = ((plaintext[i] - 'A' + key[i]) % ALPHABET_SIZE) + 'A';
+        } else if (plaintext[i] >= 'a' && plaintext[i] <= 'z') {
+            ciphertext[i] = ((plaintext[i] - 'a' + key[i]) % ALPHABET_SIZE) + 'a';
+        } else {
+            
+            ciphertext[i] = plaintext[i];
+        }
+    }
+    ciphertext[len] = '\0'; 
+}
+
+void vigenere_decrypt(char *ciphertext, int *key, char *plaintext) {
+    int i;
+    int len = strlen(ciphertext);
+    
+    for (i = 0; i < len; i++) {
+        
+        if (ciphertext[i] >= 'A' && ciphertext[i] <= 'Z') {
+            plaintext[i] = ((ciphertext[i] - 'A' - key[i] + ALPHABET_SIZE) % ALPHABET_SIZE) + 'A';
+        } else if (ciphertext[i] >= 'a' && ciphertext[i] <= 'z') {
+            plaintext[i] = ((ciphertext[i] - 'a' - key[i] + ALPHABET_SIZE) % ALPHABET_SIZE) + 'a';
+        } else {
+            
+            plaintext[i] = ciphertext[i];
+        }
+    }
+    plaintext[len] = '\0'; 
+}
+
+int main() {
+    char plaintext[256], ciphertext[256], decrypted_text[256];
+    int key[256]; 
+    int len;
+
+    srand(time(0));
+
+    printf("Enter plaintext: ");
+    fgets(plaintext, sizeof(plaintext), stdin);
+    plaintext[strcspn(plaintext, "\n")] = '\0'; 
+
+    len = strlen(plaintext);
+
+    generate_key(key, len);
+
+    vigenere_encrypt(plaintext, key, ciphertext);
+    printf("Encrypted Text: %s\n", ciphertext);
+
+    vigenere_decrypt(ciphertext, key, decrypted_text);
+    printf("Decrypted Text: %s\n", decrypted_text);
+
+    printf("One-time pad key (shifts): ");
+    int i;
+    for (i = 0; i < len; i++)
+        printf("%d ", key[i]);
+    printf("\n");
+
+    return 0;
+}
