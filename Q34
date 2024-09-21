@@ -1,0 +1,81 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdint.h>
+
+#define BLOCK_SIZE 8   
+void xor_cipher(uint8_t *block, uint8_t *key) {
+    int i;
+    for (i = 0; i < BLOCK_SIZE; i++)
+        block[i] ^= key[i];
+}
+void pad_block(uint8_t *block, int data_len) {
+    block[data_len] = 0x80; 
+    int i;
+    for (i = data_len + 1; i < BLOCK_SIZE; i++)
+        block[i] = 0x00;  
+}
+void ecb_encrypt(uint8_t *plaintext, uint8_t *key, int len) {
+    int i;
+    for (i = 0; i < len; i += BLOCK_SIZE)
+        xor_cipher(&plaintext[i], key); 
+}
+void cbc_encrypt(uint8_t *plaintext, uint8_t *key, uint8_t *iv, int len) {
+    int i, j;
+    uint8_t block[BLOCK_SIZE];
+
+    for (i = 0; i < len; i += BLOCK_SIZE) {
+        for (j = 0; j < BLOCK_SIZE; j++)
+            block[j] = plaintext[i + j] ^ iv[j]; 
+        xor_cipher(block, key);                 
+        memcpy(&plaintext[i], block, BLOCK_SIZE);
+        memcpy(iv, block, BLOCK_SIZE);          
+    }
+}
+void cfb_encrypt(uint8_t *plaintext, uint8_t *key, uint8_t *iv, int len) {
+    int i, j;
+    uint8_t cipher_stream[BLOCK_SIZE];
+
+    for (i = 0; i < len; i += BLOCK_SIZE) {
+        memcpy(cipher_stream, iv, BLOCK_SIZE);  
+        xor_cipher(cipher_stream, key);         
+        for (j = 0; j < BLOCK_SIZE; j++)
+            plaintext[i + j] ^= cipher_stream[j]; 
+        memcpy(iv, &plaintext[i], BLOCK_SIZE);  
+    }
+}
+void print_hex(uint8_t *data, int len) {
+    int i;
+    for (i = 0; i < len; i++)
+        printf("%02X ", data[i]);
+    printf("\n");
+}
+
+int main() {
+    uint8_t key[BLOCK_SIZE] = "mysecret";    
+    uint8_t iv[BLOCK_SIZE] = {0};             
+    uint8_t plaintext[16] = "HELLO WORLD!!!"; 
+    int len = 16;                             
+    if (len % BLOCK_SIZE != 0)
+        pad_block(plaintext + len, len % BLOCK_SIZE);
+
+    printf("Original Plaintext: ");
+    print_hex(plaintext, len);
+    uint8_t ecb_text[16];
+    memcpy(ecb_text, plaintext, len);
+    ecb_encrypt(ecb_text, key, len);
+    printf("ECB Encrypted: ");
+    print_hex(ecb_text, len);
+    uint8_t cbc_text[16];
+    memcpy(cbc_text, plaintext, len);
+    cbc_encrypt(cbc_text, key, iv, len);
+    printf("CBC Encrypted: ");
+    print_hex(cbc_text, len);
+    uint8_t cfb_text[16];
+    memcpy(cfb_text, plaintext, len);
+    memset(iv, 0, BLOCK_SIZE);  
+    cfb_encrypt(cfb_text, key, iv, len);
+    printf("CFB Encrypted: ");
+    print_hex(cfb_text, len);
+
+    return 0;
+}
