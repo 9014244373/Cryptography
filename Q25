@@ -1,0 +1,28 @@
+#include <stdio.h>
+
+unsigned long long gcd(unsigned long long a, unsigned long long b) {
+    if (b == 0) return a;
+    return gcd(b, a % b);
+}
+
+int main() {
+    unsigned long long n = 123456789101112131;
+    unsigned long long e = 65537; 
+    unsigned long long m = 123456789123456789; 
+    unsigned long long gcd_result = gcd(m, n);
+    printf("GCD of m and n is: %llu\n", gcd_result);
+
+    if (gcd_result > 1) {
+        printf("A factor of n is: %llu\n", gcd_result);
+
+        unsigned long long p = gcd_result;
+        unsigned long long q = n / p;
+        printf("p = %llu, q = %llu\n", p, q);
+        unsigned long long phi_n = (p - 1) * (q - 1);
+        printf("phi(n) = %llu\n", phi_n);
+    } else {
+        printf("No factor found. GCD is 1.\n");
+    }
+
+    return 0;
+}
