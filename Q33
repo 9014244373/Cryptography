@@ -1,0 +1,58 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdint.h>
+
+#define BLOCK_SIZE 8 
+#define KEY_SIZE 8 
+void permute(uint8_t *block) {
+    int i;
+    for (i = 0; i < BLOCK_SIZE; i++)
+        block[i] ^= 0xAA; 
+}
+void feistel(uint8_t *half_block, uint8_t *key) {
+    int i;
+    for (i = 0; i < BLOCK_SIZE / 2; i++)
+        half_block[i] ^= key[i]; 
+}
+void des_round(uint8_t *block, uint8_t *key) {
+    uint8_t left[BLOCK_SIZE / 2], right[BLOCK_SIZE / 2], temp[BLOCK_SIZE / 2];
+
+    memcpy(left, block, BLOCK_SIZE / 2);
+    memcpy(right, block + BLOCK_SIZE / 2, BLOCK_SIZE / 2);
+
+    memcpy(temp, right, BLOCK_SIZE / 2);    
+    feistel(right, key);                    
+    int i;
+    for (i = 0; i < BLOCK_SIZE / 2; i++)    
+        right[i] ^= left[i];
+
+    memcpy(block, temp, BLOCK_SIZE / 2);    
+    memcpy(block + BLOCK_SIZE / 2, right, BLOCK_SIZE / 2); 
+}
+void des_encrypt(uint8_t *plaintext, uint8_t *key) {
+    permute(plaintext);                    
+    des_round(plaintext, key);              
+    permute(plaintext);                    
+}
+void des_decrypt(uint8_t *ciphertext, uint8_t *key) {
+    permute(ciphertext);                   
+    des_round(ciphertext, key);            
+    permute(ciphertext);                   
+}
+
+int main() {
+    uint8_t plaintext[BLOCK_SIZE] = "ABCDEFGH"; 
+    uint8_t key[KEY_SIZE] = "mysecret";         
+    
+    printf("Plaintext: %s\n", plaintext);
+    des_encrypt(plaintext, key);
+    printf("Encrypted: ");
+    int i;
+    for (i = 0; i < BLOCK_SIZE; i++)
+        printf("%02X ", plaintext[i]);
+    printf("\n");
+    des_decrypt(plaintext, key);
+    printf("Decrypted: %s\n", plaintext);
+
+    return 0;
+}
