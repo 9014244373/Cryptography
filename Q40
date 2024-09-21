@@ -1,0 +1,102 @@
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+#define ALPHABET_SIZE 26
+#define MAX_TEXT_SIZE 1000
+#define TOP_N 10
+
+float english_freq[ALPHABET_SIZE] = {
+    8.167, 1.492, 2.782, 4.253, 12.702, 2.228, 2.015, 6.094, 6.966, 0.153, 0.772, 4.025, 2.406,
+    6.749, 7.507, 1.929, 0.095, 5.987, 6.327, 9.056, 2.758, 0.978, 2.360, 0.150, 1.974, 0.074
+};
+
+void calculate_frequency(const char *text, float freq[ALPHABET_SIZE]) {
+    int count[ALPHABET_SIZE] = {0};
+    int total_letters = 0;
+    int i;
+
+    for (i = 0; text[i] != '\0'; i++) {
+        if (isalpha(text[i])) {
+            count[toupper(text[i]) - 'A']++;
+            total_letters++;
+        }
+    }
+
+    for (i = 0; i < ALPHABET_SIZE; i++) {
+        freq[i] = ((float)count[i] / total_letters) * 100;
+    }
+}
+
+float score_plaintext(float freq[ALPHABET_SIZE]) {
+    float score = 0.0;
+    int i;
+
+    for (i = 0; i < ALPHABET_SIZE; i++) {
+        score += (freq[i] - english_freq[i]) * (freq[i] - english_freq[i]);
+    }
+
+    return score;
+}
+
+void substitute(const char *ciphertext, char *plaintext, const char *key) {
+    int i;
+
+    for (i = 0; ciphertext[i] != '\0'; i++) {
+        if (isalpha(ciphertext[i])) {
+            char base = isupper(ciphertext[i]) ? 'A' : 'a';
+            plaintext[i] = key[toupper(ciphertext[i]) - 'A'];
+        } else {
+            plaintext[i] = ciphertext[i];  
+        }
+    }
+    plaintext[i] = '\0';
+}
+
+void display_top_n_plaintexts(const char *ciphertext, int top_n) {
+    char plaintext[MAX_TEXT_SIZE];
+    float freq[ALPHABET_SIZE];
+    float scores[TOP_N] = {0};
+    char keys[TOP_N][ALPHABET_SIZE + 1];
+    int i, j;
+
+    const char *alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    char key[ALPHABET_SIZE + 1] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+    for (i = 0; i < top_n; i++) {
+        
+        for (j = 0; j < ALPHABET_SIZE; j++) {
+            key[j] = alphabet[(j + i) % ALPHABET_SIZE];
+        }
+        key[ALPHABET_SIZE] = '\0';
+
+        substitute(ciphertext, plaintext, key);
+        calculate_frequency(plaintext, freq);
+        
+        float score = score_plaintext(freq);
+        scores[i] = score;
+        strcpy(keys[i], key);
+    }
+
+    printf("\nTop %d Possible Plaintexts (by likelihood):\n", top_n);
+    for (i = 0; i < top_n; i++) {
+        printf("%2d. Key: %s, Score: %.2f, Plaintext: %s\n", i + 1, keys[i], scores[i], plaintext);
+    }
+}
+
+int main() {
+    char ciphertext[MAX_TEXT_SIZE];
+    int top_n;
+
+    printf("Enter the ciphertext (uppercase letters only): ");
+    fgets(ciphertext, sizeof(ciphertext), stdin);
+    ciphertext[strcspn(ciphertext, "\n")] = '\0';  
+
+    printf("Enter the number of top possible plaintexts to display: ");
+    scanf("%d", &top_n);
+    if (top_n > TOP_N) top_n = TOP_N;  
+
+    display_top_n_plaintexts(ciphertext, top_n);
+
+    return 0;
+}
