@@ -1,0 +1,60 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <stdint.h>
+
+#define P 23  
+#define Q 11  
+#define G 5   
+#define PRIVATE_KEY 6  
+uint32_t generate_k() {
+    return rand() % (Q - 1) + 1;  
+}
+uint32_t mod_exp(uint32_t base, uint32_t exp, uint32_t mod) {
+    uint32_t result = 1;
+    while (exp > 0) {
+        if (exp % 2 == 1) {
+            result = (result * base) % mod;
+        }
+        base = (base * base) % mod;
+        exp /= 2;
+    }
+    return result;
+}
+uint32_t hash(const char* message);
+void dsa_sign(const char* message, uint32_t* r, uint32_t* s) {
+    uint32_t k = generate_k(); 
+    *r = mod_exp(G, k, P) % Q;  
+    uint32_t k_inv = 1; 
+    *s = (k_inv * (hash(message) + (PRIVATE_KEY * *r))) % Q; 
+}
+uint32_t hash(const char* message) {
+   
+    uint32_t hash_value = 0;
+    int i = 0;
+    while (message[i] != '\0') {
+        hash_value += message[i++];
+    }
+    return hash_value % Q;  
+}
+void rsa_sign(const char* message, uint32_t* signature) {
+    *signature = mod_exp(hash(message), PRIVATE_KEY, P);  
+}
+
+int main() {
+    srand(time(0));  
+
+    const char* message = "Hello, World!";
+    uint32_t dsa_r1, dsa_s1, dsa_r2, dsa_s2;
+    uint32_t rsa_signature1, rsa_signature2;
+    dsa_sign(message, &dsa_r1, &dsa_s1);
+    dsa_sign(message, &dsa_r2, &dsa_s2);
+    rsa_sign(message, &rsa_signature1);
+    rsa_signature2 = rsa_signature1;  
+    printf("DSA Signature 1: (r: %u, s: %u)\n", dsa_r1, dsa_s1);
+    printf("DSA Signature 2: (r: %u, s: %u)\n", dsa_r2, dsa_s2);
+    printf("RSA Signature: %u\n", rsa_signature1);
+    printf("RSA Signature (same): %u\n", rsa_signature2);
+
+    return 0;
+}
